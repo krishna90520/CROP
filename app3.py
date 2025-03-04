@@ -23,9 +23,9 @@ CLASS_LABELS = {
 
 # Define model paths for each crop
 MODEL_PATHS = {
-    "Paddy": r".\classification_4Disease_best.pt",
-    "GroundNut": r".\groundnut_best.pt",
-    "Cotton": r".\cotton_best.pt"
+    "Paddy": "classification_4Disease_best.pt",
+    "GroundNut": "groundnut_best.pt",
+    "Cotton": "re_do_cotton_best (1).pt"
 }
 
 # Load the appropriate YOLOv5 classification model

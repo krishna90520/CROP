@@ -20,7 +20,8 @@ if yolov5_path not in sys.path:
     sys.path.insert(0, yolov5_path)
 
 # Import the attempt_load function from YOLOv5
-from yolov5.models.experimental import attempt_load
+# from yolov5.models.experimental import attempt_load
+from models.experimental import attempt_load
 
 # Define class labels for each crop type
 CLASS_LABELS = {

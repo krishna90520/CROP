@@ -13,7 +13,7 @@ os.environ["STREAMLIT_SERVER_ENABLE_WATCHER"] = "false"
 CLASS_LABELS = {
     "Paddy": ["brown_spot", "leaf_blast", "rice_hispa", "sheath_blight"],
     "GroundNut": ["alternaria_leaf_spot", "leaf_spot", "rosette", "rust"],
-    "Cotton": ["bacterial_blight", "curl_virus", "herbicide_growth_damage", "leaf_hopper_jassids","leaf_redding","leaf_variegation"]
+    "Cotton": ["bacterial_blight", "curl_virus", "herbicide_growth_damage", "leaf_hopper_jassids", "leaf_redding", "leaf_variegation"]
 }
 
 # Define model paths (relative for GitHub)
@@ -26,18 +26,32 @@ MODEL_PATHS = {
 # Load the appropriate YOLOv5 classification model
 @st.cache_resource
 def load_model(crop_type):
-    try:
-        model_path = MODEL_PATHS.get(crop_type)
-        if not model_path or not os.path.exists(model_path):
-            st.error(f"Model file not found for {crop_type}. Ensure the model is uploaded in 'models/' directory.")
-            return None
+    model_path = MODEL_PATHS.get(crop_type)
+    if not model_path or not os.path.exists(model_path):
+        st.error(f"Model file not found for {crop_type}. Ensure the model is uploaded in the correct directory.")
+        return None
 
-        model = torch.load(model_path, map_location=torch.device("cpu"))
+    try:
+        # Attempt safe loading using safe_globals.
+        # Replace the import below with the actual location of your custom model class.
+        from models.yolo import ClassificationModel
+
+        # Use safe_globals to whitelist the custom class
+        with torch.serialization.safe_globals([("models.yolo.ClassificationModel", ClassificationModel)]):
+            model = torch.load(model_path, map_location=torch.device("cpu"), weights_only=True)
         model.eval()  # Set to evaluation mode
         return model
-    except Exception as e:
-        st.error(f"Model loading failed: {str(e)}")
-        return None
+    except Exception as safe_error:
+        st.error(f"Safe loading failed: {str(safe_error)}")
+        st.info("Attempting full model load with weights_only=False. Note: This may execute arbitrary code.")
+        try:
+            # Fallback to full loading. Use this only if you trust the checkpoint.
+            model = torch.load(model_path, map_location=torch.device("cpu"), weights_only=False)
+            model.eval()
+            return model
+        except Exception as full_error:
+            st.error(f"Full model loading also failed: {str(full_error)}")
+            return None
 
 # Image preprocessing
 def preprocess_image(image):
@@ -97,4 +111,3 @@ if uploaded_image:
                 st.write(f"Confidence Scores: {probabilities}")
             else:
                 st.error("Error in classification.")
-

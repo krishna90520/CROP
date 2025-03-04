@@ -18,9 +18,9 @@ CLASS_LABELS = {
 
 # Define model paths (relative for GitHub)
 MODEL_PATHS = {
-    "Paddy": "models/classification_4Disease_best.pt",
-    "GroundNut": "models/groundnut_best.pt",
-    "Cotton": "models/re_do_cotton_best (1).pt"
+    "Paddy": "./classification_4Disease_best.pt",
+    "GroundNut": "./groundnut_best.pt",
+    "Cotton": "./re_do_cotton_best (1).pt"
 }
 
 # Load the appropriate YOLOv5 classification model

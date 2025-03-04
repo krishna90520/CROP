@@ -1,5 +1,5 @@
 import os
-import pathlib
+# import pathlib
 import streamlit as st
 import torch
 import torch.nn.functional as F
@@ -8,8 +8,8 @@ from torchvision import transforms
 import sys
 
 # Ensure compatibility with Windows paths
-temp = pathlib.PosixPath
-pathlib.PosixPath = pathlib.WindowsPath
+# temp = pathlib.PosixPath
+# pathlib.PosixPath = pathlib.WindowsPath
 
 # Disable Streamlit watcher to prevent reload issues
 os.environ["STREAMLIT_SERVER_ENABLE_WATCHER"] = "false"

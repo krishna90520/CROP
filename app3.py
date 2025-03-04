@@ -1,44 +1,47 @@
 import os
-import pathlib
+import urllib.request
 import streamlit as st
 import torch
 import torch.nn.functional as F
 import numpy as np
 from PIL import Image
+from ultralytics import YOLO
 from torchvision import transforms
 
-# Ensure compatibility with Windows paths
-temp = pathlib.PosixPath
-pathlib.PosixPath = pathlib.WindowsPath
-
-# Disable Streamlit watcher to prevent reload issues
+# Disable Streamlit file watcher to prevent reload issues
 os.environ["STREAMLIT_SERVER_ENABLE_WATCHER"] = "false"
 
 # Define class labels for each crop type
 CLASS_LABELS = {
     "Paddy": ["brown_spot", "leaf_blast", "rice_hispa", "sheath_blight"],
     "GroundNut": ["alternaria_leaf_spot", "leaf_spot", "rosette", "rust"],
-    "Cotton": ["bacterial_blight", "curl_virus", "herbicide_growth_damage", "leaf_hopper_jassids","leaf_redding","leaf_variegation"]
+    "Cotton": ["bacterial_blight", "curl_virus", "herbicide_growth_damage", "leaf_hopper_jassids", "leaf_redding", "leaf_variegation"]
 }
 
-# Define model paths for each crop
-MODEL_PATHS = {
-    "Paddy": "classification_4Disease_best.pt",
-    "GroundNut": "groundnut_best.pt",
-    "Cotton": "re_do_cotton_best (1).pt"
+# Model storage (Replace with actual cloud link)
+MODEL_URLS = {
+    "Paddy": "https://your-cloud-storage-link/classification_4Disease_best.pt",
+    "GroundNut": "https://your-cloud-storage-link/groundnut_best.pt",
+    "Cotton": "https://your-cloud-storage-link/cotton_best.pt"
 }
 
-# Load the appropriate YOLOv5 classification model
+MODEL_DIR = "models"
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+# Download model if not available
+def download_model(crop_type):
+    model_path = os.path.join(MODEL_DIR, f"{crop_type}.pt")
+    if not os.path.exists(model_path):
+        st.info(f"Downloading {crop_type} model...")
+        urllib.request.urlretrieve(MODEL_URLS[crop_type], model_path)
+    return model_path
+
+# Load the YOLO classification model
 @st.cache_resource
 def load_model(crop_type):
     try:
-        model_path = MODEL_PATHS.get(crop_type, None)
-        if not model_path:
-            st.error(f"No model found for {crop_type}")
-            return None
-
-        model = torch.hub.load("ultralytics/yolov5", "custom", path=model_path, force_reload=True)
-        model.eval()  # Set to evaluation mode
+        model_path = download_model(crop_type)
+        model = YOLO(model_path)  # Load YOLO model
         return model
     except Exception as e:
         st.error(f"Model loading failed: {str(e)}")
@@ -47,7 +50,7 @@ def load_model(crop_type):
 # Image preprocessing
 def preprocess_image(image):
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),  # Resize for YOLOv5 classification input
+        transforms.Resize((416, 416)),  # Resize for YOLO
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Standard normalization
     ])
@@ -62,25 +65,17 @@ def classify_image(image, crop_type):
     image_tensor = preprocess_image(image)
 
     with torch.no_grad():
-        output = model(image_tensor)  # Get raw logits
+        results = model(image_tensor)  # Run classification
+        output = results[0].probs.data.cpu().numpy()  # Get probability scores
 
-    # Convert logits to probabilities
-    probabilities = F.softmax(output, dim=1)
+    # Get predicted class index
+    predicted_idx = np.argmax(output)
+    predicted_label = CLASS_LABELS[crop_type][predicted_idx]
 
-    # Get the predicted class index
-    predicted_idx = torch.argmax(probabilities, dim=1).item()
-    predicted_label = CLASS_LABELS[crop_type][predicted_idx]  # Map index to label
-
-    return predicted_label, probabilities.squeeze().tolist()
+    return predicted_label, output.tolist()
 
 # Streamlit UI
-st.markdown("""
-    <style>
-    .title { text-align: center; color: #4CAF50; font-size: 36px; }
-    </style>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="title">Crop Disease Classification</div>', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>Crop Disease Classification</h1>", unsafe_allow_html=True)
 
 st.markdown("### Select the Crop Type")
 crop_selection = st.selectbox("Select the crop", ["Paddy", "GroundNut", "Cotton"], label_visibility="hidden")

@@ -23,9 +23,9 @@ CLASS_LABELS = {
 
 # Define model paths for each crop
 MODEL_PATHS = {
-    "Paddy": r"D:\agmarks_deploy\classification_4Disease_best.pt",
-    "GroundNut": r"D:\agmarks_deploy\groundnut_best.pt",
-    "Cotton": r"d:\agmarks_deploy\cotton_best.pt"
+    "Paddy": r".\classification_4Disease_best.pt",
+    "GroundNut": r".\groundnut_best.pt",
+    "Cotton": r".\cotton_best.pt"
 }
 
 # Load the appropriate YOLOv5 classification model

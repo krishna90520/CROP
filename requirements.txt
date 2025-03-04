@@ -1,11 +1,6 @@
 streamlit
-torch==2.2.0
+torch
 torchvision
-torchaudio
-Pillow
-numpy<2.0
-rich
-opencv-python-headless==4.6.0.66
-IPython
 ultralytics
-setuptools  # Add this line
+numpy
+Pillow
